@@ -3,8 +3,8 @@ function Cost = evalCostSingle(currentGrid,Pos,targetGrid,sprayerGrid,U,dt,Horiz
 %   Detailed explanation goes here
 
 % Penalty coefficients
-k1=[0.02,0.001];
-k2=1000;
+k1=[0.001,0.001];
+k2=800;
 
 
 nPos=2;

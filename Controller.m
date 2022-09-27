@@ -3,10 +3,10 @@ function [U] = Controller(currentGrid,targetGrid,sprayerGrid,Pos,u,U,dt)
 %   Detailed explanation goes here
 
     % Actuation limit
-    uMax=(1.5/0.01); %grids/s
+    uMax=0.3*(160/dt); %grids/s
 
     % Optimization horizon
-    Horizon = 1;%s
+    Horizon =0.5;%s
     nHorizon=round(Horizon/dt);
 
     % initalize U
@@ -24,26 +24,27 @@ function [U] = Controller(currentGrid,targetGrid,sprayerGrid,Pos,u,U,dt)
     intcon=1:length(U);
     lb=-uMax.* ones(length(U),1);
     ub=uMax.* ones(length(U),1);
-    nonlcon=@(U) nonlconSprayer(U);
+    gridDia=size(currentGrid);
+    nonlcon=@(U) nonlconSprayer(U,Pos,gridDia,dt);
     err = @(U) evalCostSingle(currentGrid,Pos,targetGrid,sprayerGrid,U,dt,nHorizon);
         Aineq   = [];
         bineq   = [];
         Aeq     = [];
         beq     = [];
-        A=[];
-        b=[];
+        A=        [];
+        b=        [];
 
 %     options = optimoptions('lsqnonlin','Display','iter');
 %     U = lsqnonlin(err,U,[],[],options);
-%     U = fminsearch(err,U);
 
-            options = optimoptions('fmincon','Display','iter','Algorithm','sqp' ,...
+            % use sqp or interior-point
+            options = optimoptions('fmincon','Display','iter','Algorithm','interior-point' ,...
             'SpecifyObjectiveGradient',false,...
             'SpecifyConstraintGradient',false,...
             'CheckGradients',false,...
             'MaxFunctionEvaluations',1e5,...
             'MaxIterations',50,...
-            'DiffMinChange',1);
+            'DiffMinChange',2);
 
         U = fmincon(err,U,A,b,Aeq,beq,lb,ub, nonlcon, options);
 

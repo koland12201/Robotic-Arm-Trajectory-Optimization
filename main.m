@@ -14,13 +14,13 @@ close
     gridSize=0.01; %m
 
     % sim params
-    dt= 0.1; %s
-    t=	10; %s
+    dt= 0.2; %s
+    t=	60; %s
     
     % control params
     TargetOffset=[0.05;0.05]; %m
     TargetWidth=1.3;
-    TargetLength=1.3;
+    TargetLength=1.3; 
     TargetHeight = 15e-3;%m
     
     % spray model
@@ -29,38 +29,43 @@ close
     % wall initial state
     GridHist = zeros(gridWidth/gridSize,gridLength/gridSize,t/dt);
    
-    GridHist(:,:,1) = -TargetHeight*ones(gridWidth/gridSize,gridLength/gridSize,1)+TargetHeight*normalize(perlinNoise(GridHist(:,:,1)),'range');
+%     GridHist(:,:,1) = -TargetHeight*ones(gridWidth/gridSize,gridLength/gridSize,1)+TargetHeight*normalize(perlinNoise(GridHist(:,:,1)),'range');
 
     % visuals
     createVideo = 'false';
     playbackMulti = 2;
     
     % initial condition
-    Pos=[270;5]; %grid x,y (assume fixed distance and orientation)
+    Pos=[145;10]; %grid x,y (assume fixed distance and orientation)
     
     
 %% init vars
 targetGrid=ones(gridWidth/gridSize,gridLength/gridSize,1)-10;
 
+PosHist=zeros(2,t/dt);
 
 U=[];
 u=[0;0];
-hessPattern=[];
+
 % create target shape
 targetGrid=targetSprayer(targetGrid,TargetHeight,[8+TargetOffset(1)/gridSize,5+TargetOffset(2)/gridSize]);
 
 %% run sim
 for i=1:t/dt
-    % sim spray
-    [GridHist(:,:,i+1),Pos]=sprayerDynamics(GridHist(:,:,i),sprayerGrid,Pos,u,dt);
     i
     % Testing outputs
-%     u=[-20;20];
+%     u=[-10;10];
 
     % Controller output
     [U] = Controller(GridHist(:,:,i),targetGrid,sprayerGrid,Pos,u,U,dt);
     u=U(1:2);
 
+    % sim spray
+    [GridHist(:,:,i+1),Pos]=sprayerDynamics(GridHist(:,:,i),sprayerGrid,Pos,u,dt);
+    
+    % log data
+    PosHist(:,i)=Pos;
+    
 end
 
 %% Visualization
@@ -70,6 +75,12 @@ surf(targetGrid)
 shading interp
 axis tight
 daspect([1 1 1])
+
+% pos log
+figure
+plot(PosHist(2,:),PosHist(1,:),'r')
+axis([0 gridWidth/gridSize 0 gridLength/gridSize])
+
 
 % draw inital surface
 frame=figure('Name','Animation','Position', [10 10 1400 900])
@@ -105,7 +116,7 @@ view(3);
 
 
 if strcmp(createVideo, 'true')
-    vid = VideoWriter('Plaster_Test4.mp4','MPEG-4');
+    vid = VideoWriter('Plaster_Test5.mp4','MPEG-4');
     vid.FrameRate = (1/dt)*2; % regulate framerate so simtime x2
     vid.Quality = 100;
     open(vid);
